@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="正史『三国志』蜀書六 關羽傳に基づく一本道ノベルゲーム。演義不使用。">
+<meta name="theme-color" content="#0E0B0A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%230E0B0A'/%3E%3Ctext x='32' y='46' font-size='44' text-anchor='middle' fill='%23B8923C' font-family='serif'%3E關%3C/text%3E%3C/svg%3E">
+<title>關羽 ─ 漢寿亭侯伝</title>
+<style>
+  :root{ --black:#0E0B0A; --gold:#B8923C; --crimson:#9E2B25; --crimson2:#C8413B;
+    --silk:#E8DCC0; --ivory:#C9BFA8; --jade:#3E8E7E; }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; background:#000; overflow:hidden;
+    font-family:"Hiragino Mincho ProN","Yu Mincho",serif; color:var(--silk);}
+  #app{position:relative; width:100vw; height:100vh; height:100dvh; overflow:hidden; background:#000;}
+  #bg{position:absolute; inset:0; z-index:1; background:#000; background-size:cover; background-position:center; transition:opacity .5s ease;}
+  #bgtint{position:absolute; inset:0; z-index:2; pointer-events:none; transition:background .8s ease;}
+  #bgcap{position:absolute; top:14px; left:16px; z-index:5; font-size:12px; letter-spacing:.15em;
+    color:rgba(232,220,192,.45); text-shadow:0 1px 4px #000;}
+  #stage{position:absolute; inset:0; z-index:3; pointer-events:none; overflow:hidden;}
+  #cg{position:absolute; inset:0; z-index:4; opacity:0; pointer-events:none; background:#000; background-size:cover; background-position:center; transition:opacity .55s ease;}
+  #cg.on{opacity:1;}
+  .sprite{position:absolute; bottom:0; left:50%; opacity:0; will-change:transform,opacity,filter;
+    transform:translateX(-50%) translateY(16px);
+    transition:opacity .45s ease, transform .45s ease, filter .35s ease, height .4s ease, left .45s ease;
+    filter:drop-shadow(0 12px 22px rgba(0,0,0,.5));}
+  .sprite img{height:100%; width:auto; display:block; transform-origin:bottom center; transition:transform .35s ease;}
+  .sprite.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .sprite.dim{filter:brightness(.45) saturate(.82) drop-shadow(0 12px 22px rgba(0,0,0,.55));}
+  .sprite.dim img{transform:scale(.94);}
+  .sprite.spot img{transform:scale(1);}
+  #fx{position:absolute; inset:0; z-index:6; pointer-events:none; opacity:0;}
+  #fx.flash{background:#fff; animation:flash .45s ease;}
+  @keyframes flash{0%{opacity:0;}20%{opacity:.9;}100%{opacity:0;}}
+  #veil{position:absolute; inset:0; z-index:6; background:#000; opacity:0; pointer-events:none; transition:opacity .6s ease;}
+  #win{position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(env(safe-area-inset-bottom,0px) + 18px);
+    width:min(92%,900px); z-index:8;
+    height:184px; height:clamp(184px,27dvh,244px); padding:14px 20px 28px;
+    background:linear-gradient(180deg, rgba(13,9,7,.90), rgba(7,5,4,.975));
+    border:1px solid rgba(184,146,60,.32); border-radius:14px;
+    box-shadow:0 12px 46px rgba(0,0,0,.62), inset 0 1px 0 rgba(184,146,60,.12);
+    cursor:pointer; display:flex; flex-direction:column; overflow:hidden;}
+  #name{align-self:flex-start; display:inline-block; font-size:clamp(13px,1.8vw,16px); font-weight:bold;
+    padding:3px 15px; margin-bottom:9px; border-radius:4px; color:#fff; letter-spacing:.08em; min-height:8px;}
+  #text{font-size:clamp(16px,2.5vw,20px); line-height:1.78; color:var(--silk); text-shadow:0 1px 3px #000;
+    overflow:hidden; min-height:0; flex:1 1 auto; padding-right:2px;
+    white-space:pre-wrap; line-break:strict; word-break:normal; overflow-wrap:normal; letter-spacing:.02em;}
+  #text.narrate{color:#aab6c9; font-style:italic; opacity:.96;}
+  #text .mark{color:var(--crimson2); margin-right:.4em;}
+  #text.narrate .mark{color:#7d8ba3; font-style:normal;}
+  #next{display:none!important;}
+  #choices{position:absolute; inset:0; z-index:9; display:none;}
+  #title,#endcard{position:absolute; inset:0; z-index:12; display:flex; flex-direction:column;
+    justify-content:center; align-items:center; text-align:center;
+    padding:calc(env(safe-area-inset-top,0px) + 30px) 30px calc(env(safe-area-inset-bottom,0px) + 30px);
+    background:radial-gradient(ellipse at center, #0e1a16 0%, #070a08 70%, #000 100%);}
+  #title{background:linear-gradient(180deg, rgba(6,8,6,.42) 0%, rgba(6,8,6,.30) 38%, rgba(6,8,6,.88) 100%), url('assets/title_kv.jpg'); background-size:cover; background-position:center;}
+  #endcard{display:none; background:radial-gradient(ellipse at center,#10140f 0%,#000 80%); background-size:cover; background-position:center;}
+  .logo{font-size:clamp(54px,16vw,120px); font-weight:bold; letter-spacing:.14em; color:var(--gold);
+    text-shadow:0 0 30px rgba(184,146,60,.4), 0 4px 8px #000;
+    background:linear-gradient(180deg,#E8C97A,#B8923C 50%,#6e5520); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;}
+  .sub{margin-top:14px; font-size:clamp(13px,3vw,18px); color:var(--silk); letter-spacing:.18em;}
+  .sub2{margin-top:6px; font-size:clamp(11px,2.4vw,14px); color:rgba(232,220,192,.6); letter-spacing:.1em;}
+  .btn{margin-top:42px; padding:13px 40px; cursor:pointer; font-size:17px; letter-spacing:.2em; color:var(--gold);
+    border:1px solid var(--gold); border-radius:3px; background:rgba(184,146,60,.06); transition:.25s;}
+  .btn:hover,.btn:active{background:var(--gold); color:var(--black);}
+  #endtitle{font-size:clamp(30px,8vw,58px); font-weight:bold; letter-spacing:.1em; margin-bottom:10px; color:var(--silk);}
+  #endname{font-size:14px; letter-spacing:.3em; color:var(--gold); margin-bottom:20px;}
+  #endbody{font-size:14px; line-height:2; color:var(--ivory); max-width:620px;}
+  .hint{position:absolute; bottom:calc(env(safe-area-inset-bottom,0px) + 22px); font-size:11px;
+    color:rgba(232,220,192,.45); letter-spacing:.2em; padding:0 24px;}
+  #hud{position:absolute; top:calc(env(safe-area-inset-top,0px) + 9px); right:calc(env(safe-area-inset-right,0px) + 10px);
+    z-index:10; display:none; gap:7px; align-items:center;}
+  #hud.on{display:flex;}
+  .hbtn{pointer-events:auto; cursor:pointer; font-size:11px; font-weight:bold; letter-spacing:.1em; color:var(--silk);
+    min-width:30px; text-align:center; padding:6px 11px; border:1px solid rgba(184,146,60,.5); border-radius:15px;
+    background:rgba(10,8,7,.55); backdrop-filter:blur(3px); transition:.18s; user-select:none; line-height:1;}
+  .hbtn:active{transform:scale(.94);}
+  .hbtn.active{background:var(--gold); color:var(--black); border-color:var(--gold); box-shadow:0 0 12px rgba(184,146,60,.45);}
+  .overlay{position:absolute; inset:0; z-index:11; display:none; align-items:center; justify-content:center;
+    padding:calc(env(safe-area-inset-top,0px) + 46px) 16px calc(env(safe-area-inset-bottom,0px) + 30px);
+    background:rgba(6,4,3,.8); backdrop-filter:blur(4px);}
+  .overlay.on{display:flex;}
+  .ovpanel{width:min(560px,95%); max-height:100%; display:flex; flex-direction:column;
+    background:linear-gradient(180deg,rgba(18,13,10,.97),rgba(9,6,5,.99));
+    border:1px solid rgba(184,146,60,.4); border-radius:15px; overflow:hidden;
+    box-shadow:0 16px 50px rgba(0,0,0,.7);}
+  .ovhead{padding:15px 20px; font-size:15px; font-weight:bold; letter-spacing:.25em; color:var(--gold);
+    border-bottom:1px solid rgba(184,146,60,.25);}
+  #logbody{overflow-y:auto; -webkit-overflow-scrolling:touch; padding:4px 20px 16px;}
+  .logrow{padding:11px 0; border-bottom:1px solid rgba(184,146,60,.1); font-size:14px; line-height:1.7;}
+  .logrow:last-child{border-bottom:none;}
+  .logrow .ln{display:block; font-size:11px; color:var(--gold); letter-spacing:.12em; margin-bottom:3px;}
+  .logrow .lt{color:var(--silk);}
+  .logrow.nr .lt{color:var(--ivory);}
+  .mitem{padding:16px 22px; cursor:pointer; font-size:15px; color:var(--silk); letter-spacing:.08em;
+    border-bottom:1px solid rgba(184,146,60,.12); transition:.16s;}
+  .mitem:active{background:rgba(184,146,60,.16);}
+  .ovclose{padding:15px; text-align:center; cursor:pointer; font-size:14px; letter-spacing:.2em; color:var(--gold);
+    background:rgba(184,146,60,.08);}
+  .ovclose:active{background:rgba(184,146,60,.2);}
+  #app.hideui #win, #app.hideui #hud, #app.hideui #bgcap{opacity:0; pointer-events:none;}
+  #win,#hud,#bgcap{transition:opacity .3s ease;}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="bg"></div>
+  <div id="bgtint"></div>
+  <div id="bgcap"></div>
+  <div id="stage"></div>
+  <div id="cg"></div>
+  <div id="fx"></div>
+  <div id="veil"></div>
+  <div id="win">
+    <span id="name"></span>
+    <div id="text"></div>
+    <span id="next">▼</span>
+  </div>
+  <div id="choices"></div>
+
+  <div id="hud">
+    <div class="hbtn" id="b-auto">AUTO</div>
+    <div class="hbtn" id="b-skip">SKIP</div>
+    <div class="hbtn" id="b-log">LOG</div>
+    <div class="hbtn" id="b-menu">☰</div>
+  </div>
+  <div id="log" class="overlay"><div class="ovpanel">
+    <div class="ovhead">ログ</div><div id="logbody"></div><div class="ovclose" id="log-close">閉じる</div>
+  </div></div>
+  <div id="menu" class="overlay"><div class="ovpanel">
+    <div class="ovhead">メニュー</div>
+    <div class="mitem" id="m-speed">文字速度：瞬間</div>
+    <div class="mitem" id="m-hide">ウインドウを隠す</div>
+    <div class="mitem" id="m-restart">最初から読む</div>
+    <div class="mitem" id="m-title">タイトルへ戻る</div>
+    <div class="ovclose" id="menu-close">閉じる</div>
+  </div></div>
+
+  <div id="title">
+    <div class="logo">關羽</div>
+    <div class="sub">誓った。ゆえに、動く。</div>
+    <div class="sub2">正史『三国志』蜀書六 關羽傳 ／ 一本道ノベル</div>
+    <div class="btn" id="startbtn">物語を始める</div>
+    <div class="hint">選択肢なし。正史だけで綴る、関羽一代記。</div>
+  </div>
+  <div id="endcard">
+    <div id="endtitle"></div>
+    <div id="endname"></div>
+    <div id="endbody"></div>
+    <div class="btn" id="restartbtn">タイトルへ</div>
+  </div>
+</div>
+
+<script src="scenes.js"></script>
+<script>
+const MOOD = {
+  warm:'linear-gradient(160deg,#2a120c,#150a08 60%,#070403)',
+  cool:'linear-gradient(160deg,#0c1320,#0a0e16 60%,#05070c)',
+  night:'linear-gradient(160deg,#10101a,#08080c 70%,#000)',
+  dawn:'linear-gradient(160deg,#2a2018,#181410 60%,#0a0806)',
+  dusk:'linear-gradient(160deg,#2a1a12,#181009 60%,#0a0604)',
+  storm:'linear-gradient(160deg,#1a1d24,#0e1014 65%,#05060a)',
+  default:'linear-gradient(160deg,#1a1008,#0a0604)'
+};
+const VIGNETTE='linear-gradient(180deg, rgba(6,4,3,.30) 0%, rgba(6,4,3,0) 20%, rgba(6,4,3,0) 46%, rgba(6,4,3,.5) 80%, rgba(6,4,3,.88) 100%)';
+const TINT={ warm:'rgba(48,20,8,.22)', cool:'rgba(10,16,32,.30)', night:'rgba(8,10,30,.34)',
+  dawn:'rgba(46,30,16,.18)', dusk:'rgba(40,24,12,.20)', storm:'rgba(20,26,36,.34)', default:'rgba(20,12,8,.20)' };
+// 背景・CGは bg_key / cg_key を assets/ から直接ロード（一本道VN用に簡素化）
+function showCg(cg){ if(!cg) return; const el=E('cg'); el.style.background=VIGNETTE+", url('assets/cg/"+cg+".jpg') center/cover"; el.classList.add('on'); }
+function hideCg(){ const el=E('cg'); if(el) el.classList.remove('on'); }
+function setBg(bgKey, mood){
+  hideCg();
+  const bg=E('bg'), tint=E('bgtint');
+  if(bgKey){
+    bg.style.background='#000';
+    bg.style.backgroundImage="url('assets/bg/"+bgKey+".jpg')";
+    bg.style.backgroundSize='cover'; bg.style.backgroundPosition='center';
+    const t=TINT[mood]||TINT.default;
+    tint.style.background=VIGNETTE+', linear-gradient(0deg,'+t+','+t+')';
+  } else {
+    bg.style.backgroundImage='none'; bg.style.background=MOOD[mood]||MOOD.default;
+    tint.style.background='none';
+  }
+}
+// 名前タブの配色（関羽＝翡翠、敵味方を色で）
+const CHARMETA = {
+  '関羽':{c:'#fff',bg:'linear-gradient(180deg,#3E8E7E,#27604f)'},
+  '劉備':{c:'#fff',bg:'linear-gradient(180deg,#8a6d2a,#5a4418)'},
+  '張飛':{c:'#fff',bg:'linear-gradient(180deg,#4a3a33,#2e2420)'},
+  '曹操':{c:'#fff',bg:'linear-gradient(180deg,#5a5650,#36332f)'},
+  '張遼':{c:'#fff',bg:'linear-gradient(180deg,#46535f,#2c343c)'},
+  '顔良':{c:'#fff',bg:'linear-gradient(180deg,#6b3530,#43211e)'},
+  '諸葛亮':{c:'#fff',bg:'linear-gradient(180deg,#4e6356,#2f3d35)'},
+  '馬超':{c:'#fff',bg:'linear-gradient(180deg,#6a5240,#413327)'},
+  '于禁':{c:'#fff',bg:'linear-gradient(180deg,#54565a,#333538)'},
+  '龐徳':{c:'#fff',bg:'linear-gradient(180deg,#5a4a44,#372d29)'},
+  '呂蒙':{c:'#fff',bg:'linear-gradient(180deg,#3a4a5a,#242f3a)'},
+  '孫権':{c:'#fff',bg:'linear-gradient(180deg,#4a3a5a,#2d2438)'},
+  '関平':{c:'#fff',bg:'linear-gradient(180deg,#3E8E7E,#2a5e50)'},
+};
+const NAME2CHAR={'関羽':'guanyu','劉備':'liubei','張飛':'zhangfei','曹操':'caocao','張遼':'zhangliao',
+  '顔良':'yanliang','諸葛亮':'zhugeliang','馬超':'machao','于禁':'yujin','龐徳':'pangde',
+  '呂蒙':'lumeng','孫権':'sunquan','関平':'guanping'};
+
+const E = id=>document.getElementById(id);
+const SCENES = window.SCENES || {};
+const SCENE_ORDER = (window.SCENE_ORDER && window.SCENE_ORDER.length) ? window.SCENE_ORDER : Object.keys(SCENES);
+let node, nodeId, idx, currentSpeaker;
+let stage=[]; const stageEls={};
+let auto=false, skip=false, skipTimer=null, autoTimer=null, hideUI=false, revealing=false, finishReveal=null, typeIv=null, history=[];
+let pages=[], pageIdx=0, curPrefix='', curText=null;
+const SPEEDS=[{n:'瞬間',ms:0},{n:'速',ms:14},{n:'中',ms:28},{n:'遅',ms:48}]; let speedIdx=0;
+
+function start(){
+  clearStage(); currentSpeaker=null;
+  setAuto(false); setSkip(false); setHideUI(false);
+  if(autoTimer){clearTimeout(autoTimer); autoTimer=null;} clearInterval(typeIv); revealing=false;
+  pages=[]; pageIdx=0; curText=null; history=[]; E('hud').classList.add('on');
+  E('menu').classList.remove('on'); E('log').classList.remove('on');
+  E('title').style.display='none'; E('endcard').style.display='none'; hideCg();
+  go(SCENE_ORDER[0]);
+}
+function go(id){
+  if(!SCENES[id]){ console.warn('missing node',id); return finale(); }
+  clearStage();
+  nodeId=id; node=SCENES[id]; idx=0; render();
+}
+function nextNode(){
+  const i=SCENE_ORDER.indexOf(nodeId);
+  if(i>=0 && i<SCENE_ORDER.length-1){ return go(SCENE_ORDER[i+1]); }
+  return finale();
+}
+function render(){
+  if(idx>=node.length){ return nextNode(); }
+  const s=node[idx];
+  if(s.t==='bg'){ setBg(s.bg, s.mood); E('bgcap').textContent=''; clearStage(); idx++; return render(); }
+  if(s.t==='sprite'){ showSprite(s.key); idx++; return render(); }
+  if(s.t==='cg'){ showCg(s.cg); idx++; return render(); }
+  if(s.t==='hide'){ clearStage(); idx++; return render(); }
+  if(s.t==='fx'){ doFx(s.fx); idx++; return render(); }
+  if(s.t==='say'){ say(s.name||'', s.text||''); return; }
+  if(s.t==='narrate'){ narrate(s.text||''); return; }
+  idx++; return render();
+}
+function advance(){
+  if(hideUI){ setHideUI(false); return; }
+  if(E('menu').classList.contains('on')||E('log').classList.contains('on')) return;
+  if(E('title').style.display!=='none') return;
+  if(E('endcard').style.display==='flex') return;
+  if(!node) return;
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  if(revealing){ if(finishReveal) finishReveal(); return; }
+  if(pageIdx < pages.length-1){ pageIdx++; typeLine(curPrefix, pages[pageIdx]); return; }
+  idx++; render();
+}
+function say(name,text){
+  const meta=CHARMETA[name]||{c:'#fff',bg:'rgba(60,50,40,.9)'};
+  const n=E('name'); n.textContent=name; n.style.background=meta.bg; n.style.color=meta.c; n.style.visibility='visible';
+  E('text').classList.remove('narrate');
+  history.push({name:name,text:text,nr:false});
+  startLine('', text);
+  currentSpeaker=NAME2CHAR[name]||null; applySpotlight();
+}
+function narrate(text){
+  E('name').style.visibility='hidden';
+  E('text').classList.add('narrate');
+  history.push({name:'',text:text,nr:true});
+  startLine('', text);
+  currentSpeaker=null; applySpotlight();
+}
+function formatLine(text){
+  return (text||'')
+    .replace(/([。！？!?]+[」』）)\]］】]*)/g,'$1\n')
+    .replace(/[ 　]*\n[ 　]*/g,'\n')
+    .replace(/\n{2,}/g,'\n').replace(/\n+$/,'')
+    .replace(/([一-鿿々〆ヶ])(?=[一-鿿々〆ヶ])/g,'$1⁠');
+}
+function paginate(formatted, prefix){
+  const t=E('text');
+  const fit=(s)=>{ t.innerHTML=prefix; const sp=document.createElement('span'); sp.textContent=s; t.appendChild(sp); return t.scrollHeight<=t.clientHeight+1; };
+  const out=[]; let rest=formatted, guard=0;
+  while(rest.length && guard++<60){
+    if(fit(rest)){ out.push(rest); rest=''; break; }
+    let lo=1, hi=rest.length, best=1;
+    while(lo<=hi){ const mid=(lo+hi)>>1; if(fit(rest.slice(0,mid))){ best=mid; lo=mid+1; } else hi=mid-1; }
+    const head=rest.slice(0,best);
+    const nl=head.lastIndexOf('\n');
+    let cut;
+    if(nl>0){ cut=nl+1; }
+    else { const lb=Math.max(head.lastIndexOf('。'),head.lastIndexOf('！'),head.lastIndexOf('？'),head.lastIndexOf('、'));
+           cut=(lb>=best*0.4)?lb+1:best; }
+    out.push(rest.slice(0,cut).replace(/^\n+|\n+$/g,''));
+    rest=rest.slice(cut).replace(/^[\n 　]+/,'');
+  }
+  t.innerHTML='';
+  return out.length?out:[''];
+}
+function bracketPages(pgs){
+  const out=[]; let carry=0;
+  for(let pg of pgs){
+    let s='（'.repeat(carry)+pg, depth=0;
+    for(const ch of s){ if(ch==='（') depth++; else if(ch==='）'){ depth--; if(depth<0) depth=0; } }
+    if(depth>0) s=s+'）'.repeat(depth);
+    carry=depth; out.push(s);
+  }
+  return out;
+}
+function startLine(prefix, text){
+  curPrefix=prefix; curText=text; pages=bracketPages(paginate(formatLine(text), prefix)); pageIdx=0;
+  typeLine(curPrefix, pages[0]);
+}
+function refit(){
+  renderStage();
+  if(curText!=null && node && E('title').style.display==='none' && E('endcard').style.display!=='flex'){
+    const keep=pageIdx;
+    pages=bracketPages(paginate(formatLine(curText), curPrefix)); pageIdx=Math.min(keep,pages.length-1);
+    const t=E('text'); t.innerHTML=curPrefix; const sp=document.createElement('span'); sp.textContent=pages[pageIdx]; t.appendChild(sp);
+    revealing=false; E('next').textContent=(pageIdx<pages.length-1)?'▽':'▼'; E('next').style.display='inline';
+  }
+}
+function typeLine(prefix, text){
+  const t=E('text');
+  if(autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  clearInterval(typeIv);
+  t.innerHTML=prefix;
+  const span=document.createElement('span'); t.appendChild(span);
+  E('next').style.display='none';
+  revealing=true;
+  let i=0; const ms=skip?0:SPEEDS[speedIdx].ms;
+  const finish=()=>{ clearInterval(typeIv); span.textContent=text; revealing=false;
+    E('next').textContent=(pageIdx<pages.length-1)?'▽':'▼'; E('next').style.display='inline'; onLineDone(); };
+  finishReveal=finish;
+  if(ms<=0){ finish(); return; }
+  typeIv=setInterval(()=>{ i++; span.textContent=text.slice(0,i); if(i>=text.length) finish(); }, ms);
+}
+function onLineDone(){
+  if(skip) return;
+  if(auto){ const len=(E('text').textContent||'').length; autoTimer=setTimeout(advance, 700+len*42); }
+}
+function setAuto(on){ auto=on; E('b-auto').classList.toggle('active',on);
+  if(!on && autoTimer){ clearTimeout(autoTimer); autoTimer=null; }
+  if(on && !revealing && node) onLineDone();
+}
+function setSkip(on){ skip=on; E('b-skip').classList.toggle('active',on);
+  if(skipTimer){ clearInterval(skipTimer); skipTimer=null; }
+  if(on){ skipTimer=setInterval(()=>{
+    if(E('menu').classList.contains('on')||E('log').classList.contains('on')||
+       E('title').style.display!=='none'||E('endcard').style.display==='flex'){ setSkip(false); return; }
+    advance();
+  }, 95); }
+}
+function setHideUI(on){ hideUI=on; E('app').classList.toggle('hideui',on); }
+function openLog(){
+  const b=E('logbody'); b.innerHTML='';
+  history.slice(-300).forEach(h=>{ const r=document.createElement('div'); r.className='logrow'+(h.nr?' nr':'');
+    r.innerHTML=(h.name?'<span class="ln">'+esc(h.name)+'</span>':'')+'<span class="lt">'+esc(h.text)+'</span>'; b.appendChild(r); });
+  E('log').classList.add('on'); requestAnimationFrame(()=>{ b.scrollTop=b.scrollHeight; });
+}
+const LAYOUT_P={1:{x:[50],h:80},2:{x:[22,78],h:80},3:{x:[15,50,85],h:80}};
+function curLayout(){ return LAYOUT_P; }
+const STAGE_CAP=3;
+function charKey(k){ return k? String(k).split('_')[0] : null; }
+function ensureEl(ch){
+  let el=stageEls[ch];
+  if(!el){
+    E('stage').querySelectorAll('.sprite[data-char="'+ch+'"]').forEach(o=>{ if(o.parentNode) o.parentNode.removeChild(o); });
+    el=document.createElement('div'); el.className='sprite'; el.dataset.char=ch;
+    el.appendChild(document.createElement('img')); E('stage').appendChild(el); stageEls[ch]=el; }
+  return el;
+}
+function removeEl(ch){ const el=stageEls[ch]; if(!el) return; el.classList.remove('show');
+  setTimeout(()=>{ if(el.parentNode) el.parentNode.removeChild(el); },450); delete stageEls[ch]; }
+function clearStage(){ Object.keys(stageEls).forEach(removeEl); stage=[]; }
+function showSprite(key){
+  const ch=charKey(key); if(!ch) return;
+  const item=stage.find(s=>s.char===ch);
+  if(item){ item.key=key; }
+  else{
+    if(stage.length>=STAGE_CAP){
+      let i=stage.findIndex(s=>s.char!==currentSpeaker); if(i<0) i=0;
+      removeEl(stage.splice(i,1)[0].char);
+    }
+    stage.push({char:ch,key});
+  }
+  renderStage();
+}
+function renderStage(){
+  const LL=curLayout();
+  const n=Math.min(stage.length,STAGE_CAP); const L=LL[n]||LL[STAGE_CAP];
+  stage.forEach((s,i)=>{
+    const el=ensureEl(s.char); const img=el.querySelector('img');
+    const src='assets/sprites/'+s.key+'.png';
+    if(img.getAttribute('src')!==src){ img.src=src; }
+    el.style.left=L.x[i]+'%'; el.style.height=L.h+'%'; el.style.bottom=(L.b!=null?L.b:0)+'%';
+    requestAnimationFrame(()=>el.classList.add('show'));
+  });
+  applySpotlight();
+}
+function applySpotlight(){
+  const lit = currentSpeaker && stage.some(s=>s.char===currentSpeaker);
+  stage.forEach(s=>{
+    const el=stageEls[s.char]; if(!el) return;
+    if(!lit){ el.classList.remove('dim','spot'); el.style.zIndex=4; }
+    else if(s.char===currentSpeaker){ el.classList.add('spot'); el.classList.remove('dim'); el.style.zIndex=6; }
+    else{ el.classList.add('dim'); el.classList.remove('spot'); el.style.zIndex=3; }
+  });
+}
+function doFx(fx){
+  const el=E('fx');
+  if(fx==='blackout'||fx==='fade'){ const v=E('veil'); v.style.opacity= fx==='blackout'?'1':'.6'; setTimeout(()=>v.style.opacity='0',700); return; }
+  el.className=''; void el.offsetWidth; el.classList.add('flash');
+}
+function finale(){
+  setAuto(false); setSkip(false); hideCg(); E('hud').classList.remove('on');
+  E('endtitle').textContent='― 完 ―';
+  E('endname').textContent='壯繆侯';
+  E('endbody').textContent='正史『三国志』蜀書六 關羽傳 に基づく。';
+  E('endcard').style.display='flex';
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+E('app').addEventListener('click',advance);
+document.addEventListener('keydown',e=>{ if(e.key===' '||e.key==='Enter') advance(); });
+E('startbtn').onclick=(e)=>{ e.stopPropagation(); start(); };
+E('restartbtn').onclick=(e)=>{ e.stopPropagation(); E('endcard').style.display='none'; E('title').style.display='flex'; };
+E('b-auto').onclick=e=>{ e.stopPropagation(); setAuto(!auto); };
+E('b-skip').onclick=e=>{ e.stopPropagation(); setSkip(!skip); };
+E('b-log').onclick=e=>{ e.stopPropagation(); openLog(); };
+E('b-menu').onclick=e=>{ e.stopPropagation(); E('menu').classList.add('on'); };
+E('log-close').onclick=e=>{ e.stopPropagation(); E('log').classList.remove('on'); };
+E('menu-close').onclick=e=>{ e.stopPropagation(); E('menu').classList.remove('on'); };
+E('m-speed').onclick=e=>{ e.stopPropagation(); speedIdx=(speedIdx+1)%SPEEDS.length; E('m-speed').textContent='文字速度：'+SPEEDS[speedIdx].n; };
+E('m-hide').onclick=e=>{ e.stopPropagation(); E('menu').classList.remove('on'); setHideUI(true); };
+E('m-restart').onclick=e=>{ e.stopPropagation(); E('menu').classList.remove('on'); start(); };
+E('m-title').onclick=e=>{ e.stopPropagation(); E('menu').classList.remove('on'); E('log').classList.remove('on');
+  setAuto(false); setSkip(false); E('hud').classList.remove('on');
+  E('endcard').style.display='none'; E('title').style.display='flex'; };
+['log','menu'].forEach(id=>{ E(id).onclick=e=>{ e.stopPropagation(); if(e.target===E(id)) E(id).classList.remove('on'); }; });
+let _rezT; window.addEventListener('resize', ()=>{ clearTimeout(_rezT); _rezT=setTimeout(refit,160); });
+(function preloadAll(){
+  try{
+    const sp=new Set(), bgs=new Set(), cgs=new Set();
+    for(const k in SCENES) for(const s of SCENES[k]){
+      if(s&&s.t==='sprite'&&s.key) sp.add(s.key);
+      if(s&&s.t==='bg'&&s.bg) bgs.add(s.bg);
+      if(s&&s.t==='cg'&&s.cg) cgs.add(s.cg);
+    }
+    sp.forEach(k=>{ const i=new Image(); i.src='assets/sprites/'+k+'.png'; });
+    bgs.forEach(k=>{ const i=new Image(); i.src='assets/bg/'+k+'.jpg'; });
+    cgs.forEach(k=>{ const i=new Image(); i.src='assets/cg/'+k+'.jpg'; });
+  }catch(_){}
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+.DS_Store
+*.log
+_tools/shots/
+assets/sprites_raw/
